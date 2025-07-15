@@ -1,0 +1,1181 @@
+{
+  "name": "GHL Auto Contact Sync + Team Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "YOUR-WEBHOOK-ID-HERE",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -4320,
+        300
+      ],
+      "id": "4a136afc-1269-4190-acfa-56b425563f09",
+      "name": "Webhook",
+      "webhookId": "YOUR-WEBHOOK-ID-HERE"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "links",
+              "cssSelector": "a",
+              "returnValue": "attribute",
+              "attribute": "href",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {
+          "trimValues": true,
+          "cleanUpText": true
+        }
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -3960,
+        100
+      ],
+      "id": "32c16b53-e2a8-46cc-b0b4-353ec2c475f0",
+      "name": "HTML",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Webhook').item.json.body.ghl_contact_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notExists",
+                      "singleValue": true
+                    },
+                    "id": "e98d1d98-23f9-4a55-97cc-510816889940"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Add to GHL"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "baee9946-b340-4204-88c0-b7de7f3d620e",
+                    "leftValue": "={{ $('Webhook').item.json.body.ghl_contact_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Has GHL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1180,
+        160
+      ],
+      "id": "a01d44b2-f336-4b8e-9d5d-4585d2482063",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "=https://rest.gohighlevel.com/v1/contacts/{{ $('Webhook').item.json.body.ghl_contact_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer "
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28\t"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $('Webhook').item.json.body.email }}"
+            },
+            {
+              "name": "customField",
+              "value": "={{ $json.customField }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -980,
+        320
+      ],
+      "id": "bbbc685c-e5d9-415c-90f2-50a54322efb9",
+      "name": "Edit GHL Contact"
+    },
+    {
+      "parameters": {
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "root",
+          "cachedResultName": "/ (Root folder)"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -740,
+        120
+      ],
+      "id": "9f4ac671-40c5-469d-9938-a14e387cb8d3",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "",
+          "name": "Google Drive"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b824fb8b-1776-4eef-a1a4-b2b08b6e1fc2",
+              "leftValue": "={{ $json.body.website_url }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -4200,
+        -40
+      ],
+      "id": "2fe78356-c563-45ba-a9be-2b6a32a4ce69",
+      "name": "Check Website URL Exists"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.website_url }}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          },
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -4120,
+        600
+      ],
+      "id": "5735572e-94e3-4a9e-888c-2f3caf00d003",
+      "name": "Fetch Website HTML",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "errorMessage": "=Failed to fetch website HTML from: {{ $json.body.website_url }} Reason: Possibly invalid domain or blocked by target server."
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        -3880,
+        340
+      ],
+      "id": "5fe61cea-5a8d-484c-ba7d-7f2ffe2076cd",
+      "name": "Stop and Error"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0eff5a2e-df9e-448c-8df2-0c413fe8890a",
+              "name": "first_name",
+              "value": "={{ $('Webhook').item.json.body.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "a6e30c46-5c93-4e12-aeb1-a06fc4dc2f52",
+              "name": "email",
+              "value": "={{ $('Webhook').item.json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "7bb5ebc3-3a07-4e61-a0ca-ac42e5de0761",
+              "name": "organization",
+              "value": "={{ $('Webhook').item.json.body.business_name }}",
+              "type": "string"
+            },
+            {
+              "id": "a51f5da8-ae8c-464b-b99e-49fcd35227dd",
+              "name": "website_url",
+              "value": "={{ $('Webhook').item.json.body.website_url }}",
+              "type": "string"
+            },
+            {
+              "id": "77328496-0e96-4a88-a89b-df6cd0e98600",
+              "name": "industry",
+              "value": "={{ $('Webhook').item.json.body.industry }}",
+              "type": "string"
+            },
+            {
+              "id": "87e8bb95-a052-4e86-9145-c3bf74c7b19c",
+              "name": "business_id",
+              "value": "={{ $('Webhook').item.json.body.business_id }}",
+              "type": "string"
+            },
+            {
+              "id": "d534efec-c9ca-4ea7-b932-cc3233a57c45",
+              "name": "web_page_links",
+              "value": "={{ $json.links }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3760,
+        160
+      ],
+      "id": "cbe94646-9bdb-4a85-a306-6f60c55dcf59",
+      "name": "Normalize Lead Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n *  getRootDomain()  — quick regex version\n */\nfunction getRootDomain(url = '') {\n  const host = url\n    .replace(/^(?:https?:\\/\\/)?(?:www\\.)?/i, '')   // drop scheme + www\n    .split('/')[0]                                // keep host only\n    .replace(/^.+?\\.(?=[^.]+\\.[^.]+$)/, '');      // drop sub-domains\n  return host;\n}\n\n/* Item-level code -------------------------------- */\nconst url = $json.website_url || '';                      // adjust field name\nconst root = getRootDomain(url);\n\nreturn {\n  json: {\n    ...$json,\n    root_domain: root\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3560,
+        160
+      ],
+      "id": "8e28590e-e3b7-4daa-a9f0-98f44b1b803f",
+      "name": "Extract Root Domain"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "web_page_links",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -3380,
+        160
+      ],
+      "id": "7426eb7b-fc24-4e0e-832a-83aff36deac2",
+      "name": "Split Webpage Links",
+      "alwaysOutputData": false,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1a750b85-85ef-4af4-b605-f30680080d44",
+              "leftValue": "={{ $json.web_page_links }}",
+              "rightValue": "/",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              }
+            },
+            {
+              "id": "501e7fd3-fd90-4582-ae8f-5626988e8d7e",
+              "leftValue": "={{ $json.web_page_links }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -3180,
+        160
+      ],
+      "id": "69a62729-220e-496d-9c3f-c94179fa5f49",
+      "name": "Filter Internal Links"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        -2980,
+        160
+      ],
+      "id": "b5213c69-8e61-4d69-be45-cb6f70b04120",
+      "name": "Remove Duplicated URLs"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "326ed9c8-65be-4c7f-ab55-30dc7dc2c5d0",
+              "leftValue": "={{ $('Split Webpage Links').item.json.web_page_links }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2760,
+        160
+      ],
+      "id": "6ca0d6b4-bb36-4ffb-9fd0-0c1030a44be0",
+      "name": "Check Valid URL"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "493e47d3-39d6-41bd-aa30-9068db0eb269",
+              "leftValue": "={{ $json.web_page_links }}",
+              "rightValue": ".jpg",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "7ea72dc0-88d6-43c4-94c7-b0f475ba8a53",
+              "leftValue": "={{ $json.web_page_links }}",
+              "rightValue": ".pdf",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "ce996731-2436-417c-ad3a-e157a0f9cdd0",
+              "leftValue": "={{ $json.web_page_links }}",
+              "rightValue": ".gif",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "9515bba9-a492-4935-9711-401a01981d59",
+              "leftValue": "={{ $json.web_page_links }}",
+              "rightValue": ".mp3",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "6743891d-952a-4ce7-9510-c728d312597f",
+              "leftValue": "={{ $json.web_page_links }}",
+              "rightValue": ".mp4",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2580,
+        -20
+      ],
+      "id": "f2a7facc-b58b-4116-ac37-048ac1ba7407",
+      "name": "Exclude Media File Extensions"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Webhook').item.json.body.website }}/{{ $('Split Webpage Links').item.json.web_page_links }}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2560,
+        380
+      ],
+      "id": "9e062a4c-6d71-4207-847e-84a87fc0a332",
+      "name": "Request Raw Page from Invalid URL",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "U08RY8R1U9Z",
+          "mode": "list",
+          "cachedResultName": "alvaroleopoldovazquez"
+        },
+        "text": "=❌ Error requesting the web page: {{input.url}}. Please check if the domain is valid.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        -2400,
+        540
+      ],
+      "id": "ae99f462-02ca-4b64-bcf7-3af994e4f56d",
+      "name": "Send a message",
+      "webhookId": "4c267f68-e7df-4a5c-9c08-802b99cd11f8",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "errorMessage": "=🚨 The request to {{steps.extract_root_domain.output.domain}} failed. Reason: {{error.message}}"
+      },
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        -2160,
+        360
+      ],
+      "id": "e9c4dcd7-61ad-4a75-801b-1b377b75349a",
+      "name": "Stop and Error1"
+    },
+    {
+      "parameters": {
+        "url": "={{$json.web_page_links}}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2360,
+        -40
+      ],
+      "id": "09567ee4-2d3d-4809-96ca-9efd61ac1c2a",
+      "name": "Request Valid Webpage",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -2180,
+        140
+      ],
+      "id": "fd43d684-ebeb-4c99-a784-f1d5aec1dc38",
+      "name": "Combine Page Contents"
+    },
+    {
+      "parameters": {
+        "html": "={{ $json.data }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        -1900,
+        120
+      ],
+      "id": "bc298c0e-4cf5-4d93-9e83-a5148d585a73",
+      "name": "Convert HTML to MD"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=A new user just signed up for our software, Xkronos AI, and you are tasked with creating a high-converting outreach sequence using both Email and SMS.\n\nThe user will provide markdown text that has been converted from their website. Your mission is to extract unique, non-obvious insights from their content and use them to tailor the messaging in a way that feels deeply personal — as if we truly studied their business.\n\n🎯 Goal: Get the new user to book a one-on-one demo with one of our automation experts.\n\nYour task:\nTake the provided website summary and transform it into a powerful sequence of catchy, customized messages (email + SMS) that guide the user toward booking that call.\n\nYour output should always be named \"sequence\".\n\nInside \"sequence\", return a list of JSON objects in the following format:\n\njson\nCopy\nEdit\n[\n  {\n    \"message_pair\": 1,\n    \"delay\": \"0\",\n    \"content\": [\n      {\n        \"type\": \"sms\",\n        \"name\": \"sms_1\",\n        \"messages\": {\n          \"version_a\": \"Hi {first_name} — welcome to Xkronos AI! I just looked over {business_name} and loved {unique_insight}. I’ve got a couple ideas to streamline your {business_task}. Got 15 min later today or tomorrow? Grab a slot → {cal_booking_link}\",\n          \"version_b\": \"Hey {first_name}, thanks for signing up for Xkronos AI! Saw {unique_insight} on your site — solid move. I can show how automation could unlock hours in your week. Quick 15-min chat today or tomorrow? {cal_booking_link}\"\n        }\n      },\n      {\n        \"type\": \"email\",\n        \"name\": \"email_1\",\n        \"messages\": {\n          \"version_a\": {\n            \"subject\": \"{first_name}, here’s your Xkronos demo link\",\n            \"body\": \"Hi {first_name},\\n\\nAppreciate you checking out Xkronos AI! I noticed {unique_insight} on your site—impressive.\\n\\nMany {industry} teams lose {roi_stat} each month from repetitive manual tasks. I’d love to show you how our automation agent simplifies that in 15 minutes.\\n\\n👉 Book the demo here: <a href=\\\"{cal_booking_link}\\\">{cal_booking_link}</a>\\n\\nIf those times don’t work, feel free to reply with a better slot.\\n\\nTalk soon!\"\n          },\n          \"version_b\": {\n            \"subject\": \"Fast win for {business_name} ops\",\n            \"body\": \"Hi {first_name},\\n\\nLoved seeing a sharp brand like {business_name} onboard. Your {unique_insight} really stood out.\\n\\nIf you’re losing time to {business_task}, we can fix that fast. Our AI Agent automates it while syncing everything to your stack.\\n\\nSnag 15 min here → <a href=\\\"{cal_booking_link}\\\">{cal_booking_link}</a>\\n\\nBest!\"\n          }\n        }\n      },\n      {\n        \"type\": \"voicemail_drop\",\n        \"name\": \"voicemail_drop_1\",\n        \"messages\": {\n          \"version_a\": \"Hey {first_name}, calling from Xkronos AI. Sent a text and email with your demo link—could save {business_name} hours each week. Grab any time that works! Talk soon.\",\n          \"version_b\": \"Hi {first_name}, this is Xkronos AI. Details are in your inbox—pick a demo slot if automation is still a priority. Thanks!\"\n        }\n      }\n    ]\n  },\n  ...\n]\n🔁 Rules to follow:\nTone: Friendly, confident, professional — like a smart friend helping them scale.\n\nVariables:\n\nUse specific, unexpected insights from their website. Skip generic compliments. Instead of \"love your branding\", use things like:\n\n\"Loved that you walk clients through split-season billing right on the homepage.\"\n\nPrioritize industry-relevant pain points: missed leads, duplicate admin tasks, fragmented workflows, calendar chaos, etc.\n\nMake it obvious we paid attention to real details from their site.\n\nShorten long company names and cities when possible (e.g., “Flow Air” instead of “Flow Air HVAC LLC”, or “Philly” instead of “Philadelphia”).\n\nWhen referencing demo links:\n\nIn emails, wrap it in an <a> tag.\n\nIn SMS, plain text only — no formatting.\n\nModify messages per niche. If they’re a pest control team: say “auto-books to your daily routes” instead of “syncs with your calendar.”\n\nDo not make up fake stats or testimonials.\n\nBase your tone and copy around the Xkronos AI voice: focused on AI automation, CRM workflows, process elimination, and revenue unlocks.\n\n",
+              "role": "system"
+            },
+            {
+              "content": "=Contact Details: \nFirst name: {{ $('Webhook').item.json.body.first_name }}\nwebsite url: {{ $('Webhook').item.json.body.website_url }}\nEstimated Employee Count: {{ $('Webhook').item.json.body.team_size }}\nBusiness Name: {{ $('Webhook').item.json.body.business_name }}\nReported Industry: {{ $('Webhook').item.json.body.industry }}\n\nWebsite pages as mark down\n{{ JSON.stringify(\n      ($json.data ?? []).length > 10\n        ? ($json.data ?? []).slice(0, 10)\n        : ($json.data ?? [])\n   ) }}\n"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -1700,
+        140
+      ],
+      "id": "f94367e3-b538-4fb8-980d-54f0bfb83b58",
+      "name": "Generate Outreach Sequence (GPT)",
+      "credentials": {
+        "openAiApi": {
+          "id": "",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// grab your outreach array and booking link\nconst outreach     = $input.first().json.message.content.sequence\nconst bookingLink  = \"https://api.leadconnectorhq.com/widget/booking/JoqTMIMTlEVnGBeqq5Qj?bs=automation&version=a\";\n\n// same cleaning logic as before\nfunction clean(text) {\n  if (!text) return \"\";\n  return text\n    .replace(/{{cal_booking_link}}/g, bookingLink)\n    .replace(/{cal_booking_link}/g, bookingLink)\n    .replace(/[“”]/g, '\"')\n    .replace(/[’]/g, \"'\")\n    .replace(/[—–]/g, \"-\")\n    .replace(/[\\u{1F600}-\\u{1F64F}]/gu, '')  \n    .replace(/[\\u{1F300}-\\u{1F5FF}]/gu, '')\n    .replace(/[\\u{1F680}-\\u{1F6FF}]/gu, '')\n    .replace(/[\\u{2600}-\\u{26FF}]/gu, '')\n    .replace(/\\r?\\n/g, \" <br> \")\n    .replace(/ +/g, \" \")\n    .trim()\n    .slice(0, 1000);\n}\n\n// map your IDs to the raw text you want to send\nconst rawFields = [\n  // email bodies\n  { id: \"R64uyljc7IGD6AGCUm4y\", value: outreach[0]?.content[1]?.messages.version_a.body },\n  { id: \"Wt8H577bSFqaOU60jDE3\", value: outreach[1]?.content[1]?.messages.version_a.body },\n  { id: \"rndQ6itEUtA7eFeQGLDA\", value: outreach[2]?.content[1]?.messages.version_a.body },\n  { id: \"HN3iCUkwGk8l5qhBM3ZH\", value: outreach[3]?.content[1]?.messages.version_a.body },\n  { id: \"ReoyWo78EdqbxLlPVHhL\", value: outreach[4]?.content[1]?.messages.version_a.body },\n  { id: \"L8HH2LpTULTMLkYIswNM\", value: outreach[5]?.content[1]?.messages.version_a.body },\n\n  // email subjects\n  { id: \"vbNqnGiHADfvVZF0c3x7\", value: outreach[0]?.content[1]?.messages.version_a.subject },\n  { id: \"WMk3uUfkn7wZCUelQXsw\", value: outreach[1]?.content[1]?.messages.version_a.subject },\n  { id: \"rD0SMQtc7bG6xdZrnPbe\", value: outreach[2]?.content[1]?.messages.version_a.subject },\n  { id: \"uSvYdGYN27iox2JG189H\", value: outreach[3]?.content[1]?.messages.version_a.subject },\n  { id: \"6I4xQ4IRcOOwXsRDWFaY\", value: outreach[4]?.content[1]?.messages.version_a.subject },\n  { id: \"IqWXulHeM3zIFD4S8z1T\", value: outreach[5]?.content[1]?.messages.version_a.subject },\n\n  // sms\n  { id: \"kUTTIwjR0kHhn4GkJzKX\", value: outreach[0]?.content[0]?.messages.version_a },\n  { id: \"IuCuVPNk41VP9c2ENz4r\", value: outreach[1]?.content[0]?.messages.version_a },\n  { id: \"ocLzh2BSx2dBcwrdqBWv\", value: outreach[2]?.content[0]?.messages.version_a },\n  { id: \"1zRgn5GwOGCtObEpNmPM\", value: outreach[3]?.content[0]?.messages.version_a },\n  { id: \"PWnNE2lXRxf5TvoIryp7\", value: outreach[4]?.content[0]?.messages.version_a },\n  { id: \"T5mqmzQ2Ji3vl0GMBycd\", value: outreach[5]?.content[0]?.messages.version_a },\n\n  // voicemail drops\n  { id: \"C0wZYv4opr5r94gFexFf\", value: outreach[0]?.content[2]?.messages.version_a },\n  { id: \"PxGpr1djVVJlc9Fm8Wdc\", value: outreach[2]?.content[2]?.messages.version_a },\n  { id: \"zWUz9RxhXAg8GaKE9vMk\", value: outreach[5]?.content[2]?.messages.version_a },\n];\n\n// fold into one object keyed by field ID\nconst customField = rawFields.reduce((acc, { id, value }) => {\n  acc[id] = clean(value);\n  return acc;\n}, {});\n\n// emit the exact shape the GoHighLevel API wants\nreturn [\n  {\n    json: {\n      // make sure you’ve got the right path to your contact’s email\n      \"email\": \"$('Webhook').first().json.body.email\",  \n      \"customField\": customField\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1360,
+        160
+      ],
+      "id": "2ee2c090-23db-41b8-b187-8134c7aa00fb",
+      "name": "Clean & Format Outreach"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://rest.gohighlevel.com/v1/contacts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer "
+            },
+            {
+              "name": "Version",
+              "value": "2021-07-28\t"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $('Webhook').item.json.body.email }}"
+            },
+            {
+              "name": "customField",
+              "value": "={{ $json.customField }}"
+            },
+            {
+              "name": "phone",
+              "value": "={{ $('Webhook').item.json.body.phone_number }}"
+            },
+            {
+              "name": "email",
+              "value": "={{ $('Webhook').item.json.body.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1000,
+        40
+      ],
+      "id": "1f496372-49d4-461f-8c8d-f326c2b6e70a",
+      "name": "GHL - Add Contact"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "text": "The contact Juan Pérez was uploaded and his file was uploaded to Drive.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        -820,
+        -140
+      ],
+      "id": "506dc30e-96ac-4735-bf5e-8ad07ae2aaa3",
+      "name": "Send a message Internal Team",
+      "webhookId": "4d7fa3df-aee4-45f6-b5dd-4e898ec38904",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "text": "The following contact was edited",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        -700,
+        360
+      ],
+      "id": "44a5c8d2-aa8b-45ea-a416-ccb655382116",
+      "name": "Send a message Internal Team1",
+      "webhookId": "f5bc18e5-1687-4346-aaa4-e485033ab59a",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "alvleoai.app.n8n.cloud",
+            "content-length": "442",
+            "accept": "application/json",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "52.44.214.131",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "US",
+            "cf-ray": "95d6a6cd132ee5f9-IAD",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "52.44.214.131, 172.71.190.140",
+            "x-forwarded-host": "alvleoai.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-34-f494454b5-ftzwd",
+            "x-is-trusted": "yes",
+            "x-real-ip": "52.44.214.131"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "email": "test@example.com",
+            "voice": "",
+            "bot_id": 2262,
+            "industry": "",
+            "team_size": "",
+            "time_zone": "",
+            "account_id": "2622",
+            "first_name": "Alvaro",
+            "ip_address": "172.18.0.2",
+            "business_id": "26232",
+            "website_url": "www.astralcrypto.org",
+            "phone_number": "93524265175",
+            "business_name": "Xkronos AI LLC",
+            "terms_accepted": true,
+            "key": "un!",
+            "source": "onboarding_v3",
+            "timestamp": "2025-07-11 07:40:14",
+            "desired_usage": [],
+            "bot_name": "",
+            "bot_image": ""
+          },
+          "webhookUrl": "https://alvleoai.app.n8n.cloud/webhook/",
+          "executionMode": "production"
+        }
+      }
+    ],
+    "GHL - Add Contact": [
+      {
+        "json": {
+          "contact": {
+            "id": "A5uEoomDeg0mEse4FbrS",
+            "customField": [
+              {
+                "id": "R64uyljc7IGD6AGCUm4y",
+                "fieldValue": "Hi Alvaro, <br> <br> Thanks for trying out Xkronos AI! I spotted your deep dive into tokenizing real-world assets at Astral Crypto-true thought leadership. <br> <br> DeFi teams like yours often spend hours manually syncing investment intel, onboarding academy members, or updating RWA data. I'd love to show how our automation agent can centralize and eliminate all that repetitive work in just 15 minutes. <br> <br> Book the demo here: <a href=\"https://api.leadconnectorhq.com/widget/booking/JoqTMIMTlEVnGBeqq5Qj?bs=automation&version=a\">https://api.leadconnectorhq.com/widget/booking/JoqTMIMTlEVnGBeqq5Qj?bs=automation&version=a</a> <br> <br> If those slots don't fit, let me know what works-or just reply to this email. Looking forward!"
+              },
+              {
+                "id": "Wt8H577bSFqaOU60jDE3",
+                "fieldValue": "Hey Alvaro, <br> <br> Had to follow up-your Academy's approach to DeFi education, from staking to guiding users through cold wallet security, is next level. <br> <br> Xkronos AI can automate: <br> - Academy onboarding & CRM flows <br> - VIP Circle member management <br> - Auto-updating your RWA reports <br> - Syncing blog/news updates to your user base <br> <br> All while logging everything to your stack. Want to see a tailored demo? Book here: <a href=\"https://api.leadconnectorhq.com/widget/booking/JoqTMIMTlEVnGBeqq5Qj?bs=automation&version=a\">https://api.leadconnectorhq.com/widget/booking/JoqTMIMTlEVnGBeqq5Qj?bs=automation&version=a</a> <br> <br> Best, <br> The Xkronos AI Team"
+              },
+              {
+                "id": "rndQ6itEUtA7eFeQGLDA",
+                "fieldValue": "Hi Alvaro, <br> <br> Quick nudge! We help teams like Astral Crypto automate: <br> - Course registration and onboarding <br> - Real-world asset (RWA) data syncing <br> - Exclusive community management <br> So you can keep leading the revolution-without admin bottlenecks. <br> <br> Let's map your flows on a call: <a href=\"https://api.leadconnectorhq.com/widget/booking/JoqTMIMTlEVnGBeqq5Qj?bs=automation&version=a\">https://api.leadconnectorhq.com/widget/booking/JoqTMIMTlEVnGBeqq5Qj?bs=automation&version=a</a> <br> <br> Looking forward, <br> The Xkronos AI Team"
+              },
+              {
+                "id": "kUTTIwjR0kHhn4GkJzKX",
+                "fieldValue": "Hi Alvaro - welcome to Xkronos AI! I just checked out Astral Crypto and loved how you bridge real-world assets (RWAs) with blockchain, not just crypto education. I've got some automation ideas to help your DeFi workflows scale and free up more time for premium community engagement. Got 15 min later today or tomorrow? Grab a slot: https://api.leadconnectorhq.com/widget/booking/JoqTMIMTlEVnGBeqq5Qj?bs=automation&version=a"
+              },
+              {
+                "id": "IuCuVPNk41VP9c2ENz4r",
+                "fieldValue": "Alvaro, one thing that stood out-your guides on integrating cold wallets to keep DeFi portfolios secure. We help teams like yours auto-track KYC, course signups, and RWA token updates without manual headaches. Want to see it live? https://api.leadconnectorhq.com/widget/booking/JoqTMIMTlEVnGBeqq5Qj?bs=automation&version=a"
+              },
+              {
+                "id": "ocLzh2BSx2dBcwrdqBWv",
+                "fieldValue": "Just checking in, Alvaro-have you ever wished your DeFi course sign-ups, asset updates, and VIP member actions could run on autopilot? That's Xkronos AI. Jump in for a custom walkthrough: https://api.leadconnectorhq.com/widget/booking/JoqTMIMTlEVnGBeqq5Qj?bs=automation&version=a"
+              },
+              {
+                "id": "vbNqnGiHADfvVZF0c3x7",
+                "fieldValue": "Alvaro, here's your Xkronos demo link"
+              },
+              {
+                "id": "WMk3uUfkn7wZCUelQXsw",
+                "fieldValue": "How Astral Crypto can scale DeFi ops-zero manual work"
+              },
+              {
+                "id": "rD0SMQtc7bG6xdZrnPbe",
+                "fieldValue": "Ready to automate Astral Crypto's DeFi journey?"
+              },
+              {
+                "id": "C0wZYv4opr5r94gFexFf",
+                "fieldValue": "Hey Alvaro, calling from Xkronos AI. I just sent a text and email with your demo link-think it could save Astral Crypto major hours per week, especially on RWA ops. Grab any time that works!"
+              },
+              {
+                "id": "PxGpr1djVVJlc9Fm8Wdc",
+                "fieldValue": "Hey Alvaro, it's the Xkronos AI team-happy to tailor some automation flows just for Astral Crypto, especially for your unique asset management and DeFi education. Demo link is waiting-hope to talk soon!"
+              }
+            ],
+            "dateAdded": "2025-07-11T22:47:30.594Z",
+            "tags": [],
+            "type": "lead",
+            "locationId": "LtsFmZOqH2SIckewRoAE",
+            "email": "",
+            "emailLowerCase": "",
+            "phone": "+193524265175",
+            "country": "US",
+            "source": "api v1"
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Check Website URL Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Normalize Lead Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "GHL - Add Contact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit GHL Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit GHL Contact": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message Internal Team1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Website URL Exists": {
+      "main": [
+        [
+          {
+            "node": "Fetch Website HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Website HTML": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Lead Data": {
+      "main": [
+        [
+          {
+            "node": "Extract Root Domain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Root Domain": {
+      "main": [
+        [
+          {
+            "node": "Split Webpage Links",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Webpage Links": {
+      "main": [
+        [
+          {
+            "node": "Filter Internal Links",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Internal Links": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicated URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicated URLs": {
+      "main": [
+        [
+          {
+            "node": "Check Valid URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Valid URL": {
+      "main": [
+        [
+          {
+            "node": "Exclude Media File Extensions",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Request Raw Page from Invalid URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Exclude Media File Extensions": {
+      "main": [
+        [
+          {
+            "node": "Request Valid Webpage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request Raw Page from Invalid URL": {
+      "main": [
+        [
+          {
+            "node": "Combine Page Contents",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop and Error1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request Valid Webpage": {
+      "main": [
+        [
+          {
+            "node": "Combine Page Contents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Page Contents": {
+      "main": [
+        [
+          {
+            "node": "Convert HTML to MD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert HTML to MD": {
+      "main": [
+        [
+          {
+            "node": "Generate Outreach Sequence (GPT)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Outreach Sequence (GPT)": {
+      "main": [
+        [
+          {
+            "node": "Clean & Format Outreach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean & Format Outreach": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GHL - Add Contact": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message Internal Team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2393b77a-2f75-464d-9401-3934dcb78c06",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "13e20c97097a8d1de6d76dbd27c72163b6f6ec6e4a342023f3f77157e413842e"
+  },
+  "id": "gVSZavx9QG1IgcI2",
+  "tags": []
+}
